@@ -1,52 +1,33 @@
+import { useContext, useEffect, useState } from 'react';
 import { Typography, Row, Col, List, Card, Tag, Divider } from 'antd';
 
 import { useUi } from '../hooks/useUi';
+import { SocketContext } from '../context/SocketContext';
+import { getLastTickets } from '../helpers/getLastTickets';
 
 const { Title, Text } = Typography;
-
-
-const data = [
-    {
-        ticketNumber: 33,
-        desk: 3,
-        agent: 'Fernando Herrera'
-    },
-    {
-        ticketNumber: 34,
-        desk: 4,
-        agent: 'Melissa Flores'
-    },
-    {
-        ticketNumber: 35,
-        desk: 5,
-        agent: 'Carlos Castro'
-    },
-    {
-        ticketNumber: 36,
-        desk: 3,
-        agent: 'Fernando Herrera'
-    },
-    {
-        ticketNumber: 37,
-        desk: 3,
-        agent: 'Fernando Herrera'
-    },
-    {
-        ticketNumber: 38,
-        desk: 2,
-        agent: 'Melissa Flores'
-    },
-    {
-        ticketNumber: 39,
-        desk: 5,
-        agent: 'Carlos Castro'
-    },
-];
 
 
 const Line = () => {
 
     useUi(true);
+
+    const { socket } = useContext( SocketContext );
+    const [ tickets, setTickets ] = useState([]);
+
+    useEffect( () => {
+        getLastTickets().then( (tickets) => setTickets(tickets) );
+    }, []);
+
+    useEffect( () => {
+        socket.on( 'assigned-ticket', (assignedTickets) => {
+            setTickets( assignedTickets );
+        });
+
+        return () => {
+            socket.off('assigned-ticket');
+        }
+    }, [socket]);
 
     return (
         <>
@@ -55,7 +36,7 @@ const Line = () => {
                 <Row>
                     <Col span={ 12 }>
                         <List
-                            dataSource={ data.slice(0, 3) }
+                            dataSource={ tickets.slice(0, 3) }
                             renderItem={ (item) => (
                                 <List.Item>
                                     <Card
@@ -65,7 +46,7 @@ const Line = () => {
                                             <Tag color="magenta"> Desk: { item.desk } </Tag>
                                         ]}
                                     >
-                                        <Title> Number: { item.ticketNumber } </Title>
+                                        <Title> Number: { item.number } </Title>
                                     </Card>
                                 </List.Item>
                             )}
@@ -76,15 +57,15 @@ const Line = () => {
                         <Divider> Historic </Divider>
 
                         <List
-                            dataSource={ data.slice(3) }
+                            dataSource={ tickets.slice(3) }
                             renderItem={ (item) => (
                                 <List.Item>
                                     <List.Item.Meta
-                                        title={`Ticket number: ${ item.ticketNumber }`}
+                                        title={`Ticket number: ${ item.number }`}
                                         description={
                                             <>
                                                 <Text type='secondary'>On the desk: </Text>
-                                                <Tag color='magenta'>{ item.ticketNumber }</Tag>
+                                                <Tag color='magenta'>{ item.desk }</Tag>
                                                 <Text type='secondary'>Agent: </Text>
                                                 <Tag color='volcano'>{ item.agent }</Tag>
                                             </>
